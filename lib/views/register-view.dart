@@ -1,10 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:notes/services/auth/auth_exceptions.dart';
+import 'package:notes/services/auth/auth_service.dart';
 import 'package:notes/views/nested_views/show_error_dialog.dart';
-import '../firebase_options.dart';
 import '../constants/routes.dart' as routes;
-
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -14,7 +12,6 @@ class RegisterView extends StatefulWidget {
 }
 
 class _RegisterViewState extends State<RegisterView> {
-
   late final TextEditingController _email;
   late final TextEditingController _password;
 
@@ -45,9 +42,7 @@ class _RegisterViewState extends State<RegisterView> {
             enableSuggestions: false,
             autocorrect: false,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              hintText: "Enter Your Email"
-            ),
+            decoration: const InputDecoration(hintText: "Enter Your Email"),
           ),
           TextField(
             controller: _password,
@@ -59,47 +54,53 @@ class _RegisterViewState extends State<RegisterView> {
             ),
           ),
           TextButton(
-            onPressed: () async { 
+            onPressed: () async {
               final email = _email.text;
               final password = _password.text;
               try {
-                final response = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                  email: email, 
-                  password: password
+                final response = await AuthService.firebase().createUser(
+                  email: email,
+                  password: password,
                 );
-                final user = FirebaseAuth.instance.currentUser;
-                await user?.sendEmailVerification();
+                final user = AuthService.firebase().currentUser;
+                await AuthService.firebase().sendEmailVerification();
                 Navigator.of(context).pushNamedAndRemoveUntil(
-                  routes.verifyEmailRoute, 
+                  routes.verifyEmailRoute,
                   (route) => false,
                 );
-              } on FirebaseAuthException catch(e){
-                if(e.code == 'weak-password'){
-                  await showErrorDialog(context, 'weak password');
-                } else if(e.code == 'weak-email-already-in-use') {
-                  await showErrorDialog(context, 'email already in use');
-                } else if(e.code == 'invalid-email') {
-                  await showErrorDialog(context, 'Please put a valid email');
-                }
-                await showErrorDialog(context, "Error: ${e.code}");
-              } catch (e) {
-                await showErrorDialog(context, "Error: ${e.toString()}");
+              } on WeakPasswordException {
+                await showErrorDialog(
+                  context,
+                  "Weak Password",
+                );
+              } on EmailAlreadyInUseException {
+                await showErrorDialog(
+                  context,
+                  "Email Already In Use",
+                );
+              } on InvalidEmailException {
+                await showErrorDialog(
+                  context,
+                  "Invalid Email",
+                );
+              } on GenericAuthException {
+                await showErrorDialog(
+                  context,
+                  "Failed to Register",
+                );
               }
             },
-            child: const Text(
-              "register"
-            ),
+            child: const Text("register"),
           ),
-          TextButton(onPressed: () {
-            Navigator.of(context).pushNamed(
-                routes.verifyEmailRoute,
-              );
-          }, child: Text(
-            'Already registered, Login here'
-          ))
+          TextButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed(
+                  routes.verifyEmailRoute,
+                );
+              },
+              child: Text('Already registered, Login here'))
         ],
       ),
     );
   }
 }
-
