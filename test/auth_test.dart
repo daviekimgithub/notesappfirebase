@@ -1,6 +1,3 @@
-import 'dart:math';
-
-import 'package:flutter/rendering.dart';
 import 'package:notes/services/auth/auth_exceptions.dart';
 import 'package:notes/services/auth/auth_provider.dart';
 import 'package:notes/services/auth/auth_user.dart';
@@ -38,7 +35,7 @@ void main() {
         badEmailUser,
         throwsA(const TypeMatcher<UserNotFoundException>()),
       );
-      final badPasswordUser = provider.createUser(
+      provider.createUser(
         email: "someone@bar.com",
         password: "foobar",
       );
